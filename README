@@ -1,0 +1,47 @@
+This is a script i threw together while working on a paper.
+
+THIS IS FOR MY OWN PERSONAL USE ONLY.
+FEEL FREE TO USE IT, BUT DON'T EXPECT IT TO WORK WITHOUT ALOT OF TINKERING
+FOR LICENCING DETAILS, FEEL FREE TO CONTACT ME.
+
+I use it to replot parts of figures where raw data is not available.
+The process is rather tedious but it allows me to compare my figures 
+to others' on the map projection of my choice.
+(Originial figures must be on uniform lat-lon grid)
+
+The main part of the workflow requires the "export XY" extension for Inkscape,
+as far as I know, it is only available here (two versions, I use the latest):
+http://www.inkscapeforum.com/viewtopic.php?f=5&t=8826
+
+How it is done:
+1) Import the figure, which should be replotted, into Inkscape
+2) Draw a straight diagonal line between two grid points with known
+   lat-lon coordinates (e.g. between two grid intersections)
+3) SAVE!!! (On my Linux machine, the Export script inevitably crashes Inkscape
+   after completion)
+4) Select the line object and do: extensions>Export>Export XY
+5) A window will open giving the absolute coordinates of each node
+6) Copy the coordinates and paste into a text file (e.g. lvl01_x0y0_x1y1.txt)
+   Now we know the both the SVG-coordinates and their corresponding lon-lat,
+   we will use this to convert the svg-coordinates of the traced figure to
+   lon-lat.
+7) Close the dialog, Inkscape will now crash (hope you saved!)
+8) Re-open Inkscape, and begin the tedious work of tracing the figure/contour/whatever
+9) Select the line-object, do: extensions>Export>Export XY
+11) Copy coordinates to a new text file, (e.g. lvlXX_trace.txt)
+12) Close dialog+crash again
+
+13) Time for plot_patches.ncl, it needs to be modified a bit first
+14) Change the file names appropriately (note that there are two groups of
+    three files each in the example (I was too lazy/dumb to write a loop)
+15) Modify xmin_in_lon,ymin_in_lat,... to match the nodes of the line in step2
+16) Set the map projection
+17) If fewer or more files are used, add or remove lines at every c1,c2,c3 group
+18) Save and exit, run the ncl script and you should get a very simple plot.
+
+
+15) Use some magic trick to convert this to coordinates and plot a shape on the same map projection as is used in my other plots!
+
+
+--
+Adam Dingwell 2014
