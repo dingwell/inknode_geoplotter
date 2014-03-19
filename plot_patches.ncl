@@ -5,24 +5,27 @@ load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/contributed.ncl" ;copyatt
 ; Plots patches, read from ascii, on Lambert Conformal map projection
 
 begin ; PRESETS
-  fname1 = "lvl01_trace.txt"
-  fname2 = "lvl02_trace.txt"
-  fname3 = "lvl03_trace.txt"
+  fnames = (/"xy_01.txt","xy_02.txt","xy_03.txt","xy_04.txt"/)
+  headers= (/"xyref_01.txt","xyref_02.txt","xyref_03.txt","xyref_04.txt"/)
+
+  ;fname1 = "lvl01_trace.txt"
+  ;fname2 = "lvl02_trace.txt"
+  ;fname3 = "lvl03_trace.txt"
   
   ncheader = "/home/adam/data/FLX_MERGED/yearly/nexc_d02_VEI7_200803-200902.nc"
 
-  header1 = "lvl01_x0y0_x1y1.txt"
-  header2 = "lvl02_x0y0_x1y1.txt"
-  header3 = "lvl03_x0y0_x1y1.txt"
+  ;header1 = "lvl01_x0y0_x1y1.txt"
+  ;header2 = "lvl02_x0y0_x1y1.txt"
+  ;header3 = "lvl03_x0y0_x1y1.txt"
   
-  outname="leadbetter_vertical_t1"
+  outprefix="dacre_trace_"
 
   ; The coordinate used to convert pixels to lat-lon:
-  xmin_in_lon = todouble(-50.)
-  ymin_in_lat = todouble(30.)
+  xmin_in_lon = todouble(-30.)
+  ymin_in_lat = todouble(45.)
 
-  xmax_in_lon = todouble(50.)
-  ymax_in_lat = todouble(80.)
+  xmax_in_lon = todouble(40.)
+  ymax_in_lat = todouble(70.)
 
   ; Output type
   ;type = "x11"
@@ -44,8 +47,8 @@ function xy2ll(xy,x0,y0,x1,y1,lon0,lat0,lon1,lat1)
 local x2lon,y2lat ;variable list
 begin
   ; Get factors to convert xy-distance to ll-distance:
-  printVarSummary(lon1)
-  printVarSummary(x1)
+  ;printVarSummary(lon1)
+  ;printVarSummary(x1)
   dlondx = (lon1-lon0)/(x1-x0)  ; distance
   dlatdy = (lat1-lat0)/(y1-y0)  ;
   ; Convert coordinate to relative (lon,lat)=(0,0) and to lat-lon units
@@ -53,38 +56,6 @@ begin
   ll(:,0) = (xy(:,0)-x0)*dlondx+lon0
   ll(:,1) = (xy(:,1)-y0)*dlatdy+lat0
   return ll
-end
-
-begin ; load data and convert to lat-lon coordinates
-  ncol = 2
-
-  ; Read data from files/headers:
-  c1xy = readAsciiTable(fname1,ncol,"double",0)
-  c1minmax = readAsciiTable(header1,ncol,"double",0)
-  c1xmin = c1minmax(0,0)
-  c1xmax = c1minmax(1,0)
-  c1ymin = c1minmax(0,1)
-  c1ymax = c1minmax(1,1)
-
-  c2xy = readAsciiTable(fname2,ncol,"double",0)
-  c2minmax = readAsciiTable(header2,ncol,"double",0)
-  c2xmin = c2minmax(0,0)
-  c2xmax = c2minmax(1,0)
-  c2ymin = c2minmax(0,1)
-  c2ymax = c2minmax(1,1)
-
-  c3xy = readAsciiTable(fname3,ncol,"double",0)
-  c3minmax = readAsciiTable(header3,ncol,"double",0)
-  c3xmin = c3minmax(0,0)
-  c3xmax = c3minmax(1,0)
-  c3ymin = c3minmax(0,1)
-  c3ymax = c3minmax(1,1)
-end
-
-begin ; Convert xy-coord to ll-coord:
-  c1ll = xy2ll(c1xy,c1xmin,c1ymin,c1xmax,c1ymax,xmin_in_lon,ymin_in_lat,xmax_in_lon,ymax_in_lat)
-  c2ll = xy2ll(c2xy,c2xmin,c2ymin,c2xmax,c2ymax,xmin_in_lon,ymin_in_lat,xmax_in_lon,ymax_in_lat)
-  c3ll = xy2ll(c3xy,c3xmin,c3ymin,c3xmax,c3ymax,xmin_in_lon,ymin_in_lat,xmax_in_lon,ymax_in_lat)
 end
 
 begin ; Read lat2d,lon2d from netcdf file
@@ -95,13 +66,6 @@ begin ; Read lat2d,lon2d from netcdf file
   nlat  = nxy(0)
   nlon  = nxy(1)
 end
-
-begin ; Create work station and define colors
-  wks  = gsn_open_wks (type, outname)
-  gsn_define_colormap(wks,(/"white","black","tan","LightBlue","Blue"/))
-end
-
-
 begin ; Polygon/Polyline resources:
   pgres                  = True
   pgres@gsEdgesOn        = True
@@ -151,17 +115,37 @@ begin ; misc plot resources:
   res@tfDoNDCOverlay              = False ; Yes, please!
 end ;misc plot settings
 
-begin ;create plot
-  ;setvalues wks            
-  ;  "wkForegroundColor" : (/0.,0.,0./)  
-  ;  "wkBackgroundColor" : (/1.,1.,1./) 
-  ;end setvalues 
-  map = gsn_csm_map(wks,res)
+begin ; MAIN
+  ncol = 2
+  n   = dimsizes(fnames)
+  i = 0
+  do while(i.lt.n(0))
+    ; Read data from files/headers:
+    cxy = readAsciiTable(fnames(i),ncol,"double",0)
+    cminmax = readAsciiTable(headers(i),ncol,"double",0)
+    cxmin = cminmax(0,0)
+    cxmax = cminmax(1,0)
+    cymin = cminmax(0,1)
+    cymax = cminmax(1,1)
+    
+    ; Convert xy-coord to ll-coord:
+    cll = xy2ll(cxy,cxmin,cymin,cxmax,cymax,xmin_in_lon,ymin_in_lat,xmax_in_lon,ymax_in_lat)
 
-  dum1 = gsn_add_polygon(wks,map,c1ll(:,0),c1ll(:,1),pgres)
-  dum2 = gsn_add_polygon(wks,map,c2ll(:,0),c2ll(:,1),pgres)
-  dum3 = gsn_add_polygon(wks,map,c3ll(:,0),c3ll(:,1),pgres)
+    ; Create work station and define colors:
+    outname = outprefix+sprinti("%0.2i",i+1)
+    wks  = gsn_open_wks (type, outname)
+    gsn_define_colormap(wks,(/"white","black","tan","LightBlue","Blue"/))
 
-  draw(map)
-  frame(wks)
-end 
+    ; Plot polygons on map:
+    map = gsn_csm_map(wks,res)
+    dum = gsn_add_polygon(wks,map,cll(:,0),cll(:,1),pgres)
+
+    draw(map)
+    frame(wks)
+
+    ; Reset variables (next iteration will probably use different sizes)
+    delete([/cxy,cll/])
+
+    i=i+1
+  end do
+end ; MAIN
